@@ -1,0 +1,7 @@
+applications:
+- buildpack: git://github.com/18F/heroku-buildpack-mysql.git
+  command: python3 export.py
+  instances: 1
+  memory: 256M
+  name: export-db
+  no-route: true
