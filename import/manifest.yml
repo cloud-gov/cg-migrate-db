@@ -1,0 +1,12 @@
+applications:
+- buildpack: https://github.com/jcscottiii/cf-buildpack-db-export
+  command: python3 import.py
+  instances: 1
+  memory: 256M
+  name: import-db
+  no-route: true
+  services:
+  - REPLACE_TARGET
+  - REPLACE_STORE
+  env:
+    TARGET_SERVICE: REPLACETARGETSERVICE
