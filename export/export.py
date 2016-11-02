@@ -3,22 +3,33 @@
 import sys
 import json
 import os
+import os.path
 import http.server
 import socketserver
 
-def backup_mysql(creds):
-    command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password'] + ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' > db.sql'
-    os.system(command)
+def getAWSBinLocation():
+    if os.path.isfile("/home/vcap/bin/aws"):
+        return "/home/vcap/bin/aws"
+    elif os.path.isfile("/home/vcap/app/bin/aws"):
+        return "/home/vcap/app/bin/aws"
+    return ""
+
 
 def backup_mysql_to_s3(creds, vcap):
-    access, secret, bucket = find_s3_bucket_creds(vcap)
-    command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password']+ ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' | AWS_ACCESS_KEY_ID="'+access+'" AWS_SECRET_ACCESS_KEY="'+secret+'" bin/gof3r put -b '+bucket+ ' -k db.sql'
-    #command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password']+ ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' | AWS_ACCESS_KEY_ID="'+access+'" AWS_SECRET_ACCESS_KEY="'+secret+'" bin/aws s3 cp - s3://'+bucket+'/db.sql'
-    os.system(command)
+    access, secret, bucket, region = find_s3_bucket_creds(vcap)
+    aws = getAWSBinLocation()
+    if region != '':
+        command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password']+ ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' | AWS_DEFAULT_REGION="'+region+'" AWS_ACCESS_KEY_ID="'+access+'" AWS_SECRET_ACCESS_KEY="'+secret+'" '+ aws +' s3 cp - s3://'+bucket+ '/db.sql'
+        os.system(command)
+    else:
+        command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password']+ ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' | AWS_ACCESS_KEY_ID="'+access+'" AWS_SECRET_ACCESS_KEY="'+secret+'" '+ aws +' s3 cp - s3://'+bucket+ '/db.sql'
+        os.system(command)
 
 def find_s3_bucket_creds(vcap):
     s3 = vcap['s3'][0]['credentials']
-    return s3['access_key_id'], s3['secret_access_key'], s3['bucket']
+    if 'region' in s3:
+        return s3['access_key_id'], s3['secret_access_key'], s3['bucket'], s3['region']
+    return s3['access_key_id'], s3['secret_access_key'], s3['bucket'], ''
 
 def backup():
     if os.environ['VCAP_SERVICES']:
@@ -32,9 +43,6 @@ def backup():
                     if 's3' in vcap:
                         print("found bound s3 bucket. will try to export to s3 bucket")
                         backup_mysql_to_s3(creds, vcap)
-                    else:
-                        print("found no s3 bucket. will try to export to app filesystem")
-                        backup_mysql(creds)
                     return
                 else:
                     print("Unable to decide how to backup plan: " + plan + ". Exiting.")
@@ -42,7 +50,9 @@ def backup():
     print("Unable to do backup")
     sys.exit(2)
     #print(command)
-
+def install_aws_cli():
+    os.system("awscli-bundle/awscli-bundle/install -b ~/bin/aws")
+install_aws_cli()
 backup()
 # Create a server in order to download the files.
 PORT = int(os.getenv('PORT', '8000'))
