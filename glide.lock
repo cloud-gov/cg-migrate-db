@@ -1,8 +1,8 @@
-hash: e543f3b0e300abdaaac1412789290f7c175951bd8e6d09b3848d778bb4c60bbd
-updated: 2016-10-31T09:51:02.940143085-04:00
+hash: 02d28e1191669551d13acbb1c222a2e3fcd2d756cfc0c5cef37e357c75749bdd
+updated: 2016-11-03T11:25:16.623372341-04:00
 imports:
 - name: code.cloudfoundry.org/cli
-  version: fdc323b2867fd934dfa16cd8d0bf89db0552283e
+  version: 57ebfa65dcdbd88f36f744ccbfec4a78cff36025
   subpackages:
   - cf/configuration/confighelpers
   - cf/formatters
@@ -11,6 +11,8 @@ imports:
   - cf/resources
   - plugin
   - plugin/models
+- name: github.com/aws/aws-sdk-go
+  version: f3acc90875072f8d467f9303c74455a4a42e42d8
 - name: github.com/dchest/uniuri
   version: 8902c56451e9b58ff940bbe5fec35d5f9c04584a
 - name: github.com/nicksnyder/go-i18n

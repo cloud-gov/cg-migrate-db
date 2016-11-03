@@ -1,5 +1,7 @@
 package main
 
+import "errors"
+
 type GenericService struct {
 	Name string `json:"name"`
 	Plan string `json:"plan"`
@@ -14,6 +16,7 @@ type S3Creds struct {
 	Bucket          string `json:"bucket"`
 	SecretAccessKey string `json:"secret_access_key"`
 	Username        string `json:"username"`
+	Region          string `json:"region"`
 }
 
 type Service interface {
@@ -32,4 +35,15 @@ func (s S3Store) GetType() string {
 
 func (s S3Store) GetCredentials() interface{} {
 	return s.Credentials
+}
+
+func VerifyValidS3Creds(s3Creds S3Creds) error {
+	if s3Creds.AccessKeyId == "" {
+		return errors.New("Unable to find AWS Access Key")
+	} else if s3Creds.SecretAccessKey == "" {
+		return errors.New("Unable to find AWS Secret Access Key")
+	} else if s3Creds.Bucket == "" {
+		return errors.New("Unable to find S3 bucket")
+	}
+	return nil
 }

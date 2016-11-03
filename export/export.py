@@ -7,7 +7,7 @@ import os.path
 import http.server
 import socketserver
 
-def getAWSBinLocation():
+def get_aws_bin_location():
     if os.path.isfile("/home/vcap/bin/aws"):
         return "/home/vcap/bin/aws"
     elif os.path.isfile("/home/vcap/app/bin/aws"):
@@ -17,7 +17,7 @@ def getAWSBinLocation():
 
 def backup_mysql_to_s3(creds, vcap):
     access, secret, bucket, region = find_s3_bucket_creds(vcap)
-    aws = getAWSBinLocation()
+    aws = get_aws_bin_location()
     if region != '':
         command = 'bin/mysqldump -u ' + creds['username'] + ' -p' + creds['password']+ ' -h ' + creds['host'] + ' ' + creds['db_name'] + ' | AWS_DEFAULT_REGION="'+region+'" AWS_ACCESS_KEY_ID="'+access+'" AWS_SECRET_ACCESS_KEY="'+secret+'" '+ aws +' s3 cp - s3://'+bucket+ '/db.sql'
         os.system(command)

@@ -101,6 +101,20 @@ func (p *ExportPlugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Exports data to s3 bucket from a source",
 			},
 			{
+				Name:     "upload-backup-data",
+				HelpText: "Uploads local data into a s3 bucket",
+				UsageDetails: plugin.Usage{
+					Usage: "cf upload-backup-data [filepath]",
+				},
+			},
+			{
+				Name:     "download-backup-data",
+				HelpText: "Downloads data from s3 bucket to your local file system",
+				UsageDetails: plugin.Usage{
+					Usage: "cf download-backup-data",
+				},
+			},
+			{
 				Name:     "clean-export-config",
 				HelpText: "Cleans config data",
 			},
@@ -132,6 +146,10 @@ func (p *ExportPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	} else if args[0] == "clean-export-config" {
 		p.config = newConfig()
 		writeConfig = true
+	} else if args[0] == "upload-backup-data" {
+		err = p.uploadBackupData(cliConnection, args)
+	} else if args[0] == "download-backup-data" {
+		err = p.downloadBackupData(cliConnection)
 	}
 	if err != nil {
 		fmt.Println(err)
@@ -141,6 +159,68 @@ func (p *ExportPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		p.WriteConfigOrExit()
 	}
 	os.Exit(0)
+}
+
+func (p *ExportPlugin) downloadBackupData(cliConnection plugin.CliConnection) error {
+	if len(p.config.Entries) < 1 {
+		return fmt.Errorf("Please run export-data in order for the plugin to get the credentials to a s3 bucket")
+	}
+	configEntry, err := p.promptImportSelection("Input the number for the service you want to use to upload the backup\n")
+	if err != nil {
+		return err
+	}
+	raw, _ := json.Marshal(configEntry.Credentials)
+	var s3Creds S3Creds
+	err = json.Unmarshal(raw, &s3Creds)
+	if err != nil {
+		return fmt.Errorf("Unable to convert credentials into s3 credentials")
+	}
+	err = VerifyValidS3Creds(s3Creds)
+	if err != nil {
+		return err
+	}
+	err = downloadFile(s3Creds)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+func (p *ExportPlugin) uploadBackupData(cliConnection plugin.CliConnection, args []string) error {
+	if len(p.config.Entries) < 1 {
+		return fmt.Errorf("Please run export-data in order for the plugin to get the credentials to a s3 bucket")
+	}
+
+	if len(args) != 2 {
+		return fmt.Errorf("Not enough arguments for command. Check usage...")
+	}
+	path := args[1]
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("Unable to access file %s. Error: %s", file, err.Error())
+	}
+	defer file.Close()
+	configEntry, err := p.promptImportSelection("Input the number for the service you want to use to upload the backup\n")
+	if err != nil {
+		return err
+	}
+	raw, _ := json.Marshal(configEntry.Credentials)
+	var s3Creds S3Creds
+	err = json.Unmarshal(raw, &s3Creds)
+	if err != nil {
+		return fmt.Errorf("Unable to convert credentials into s3 credentials")
+	}
+	err = VerifyValidS3Creds(s3Creds)
+	if err != nil {
+		return err
+	}
+	err = uploadFile(s3Creds, file)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *ExportPlugin) exportData(cliConnection plugin.CliConnection) error {
@@ -160,7 +240,7 @@ func (p *ExportPlugin) exportData(cliConnection plugin.CliConnection) error {
 	}
 	stores := p.findSupportedStores(services)
 	if len(stores) < 1 {
-		return fmt.Errorf("No supported services\n")
+		return fmt.Errorf("No supported stores\n")
 	}
 	store, err := p.promptServiceSelection(stores, "Input the number for the service you want to use to store the backup\n")
 	if err != nil {
@@ -183,7 +263,7 @@ func getDefaultSources() []string {
 }
 
 func (p *ExportPlugin) importData(cliConnection plugin.CliConnection) error {
-	entry, err := p.promptImportSelection()
+	entry, err := p.promptImportSelection("Input the number for the service you want to restore\n")
 	if err != nil {
 		return err
 	}
@@ -210,7 +290,7 @@ func (p *ExportPlugin) importData(cliConnection plugin.CliConnection) error {
 	return nil
 }
 
-func (p *ExportPlugin) promptImportSelection() (ConfigEntry, error) {
+func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error) {
 	if len(p.config.Entries) < 1 {
 		return ConfigEntry{}, fmt.Errorf("There are no conigured services to import data from in your local config. Please run `cf export-data` first.")
 	}
@@ -218,7 +298,7 @@ func (p *ExportPlugin) promptImportSelection() (ConfigEntry, error) {
 	for i, entry := range p.config.Entries {
 		fmt.Printf("%d\t| %s (API: \"%s\", Org \"%s\", Space \"%s\", Backup Location \"%s\")\n", i, entry.SourceServiceName, entry.API, entry.Org, entry.Space, entry.StoreServiceName)
 	}
-	fmt.Printf("Input the number for the service you want to restore\n")
+	fmt.Printf(prompt)
 	i := -1
 	_, err := fmt.Scan(&i)
 	if err != nil {
@@ -342,7 +422,7 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 	if err != nil {
 		return err
 	}
-	//defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir)
 	appName := "import-db-" + uniuri.New()
 
 	_, err = cliConnection.CliCommand("push", appName, "-p", dir, "-f", filepath.Join(dir, "manifest.yml"))
@@ -386,7 +466,7 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 	if err != nil {
 		return err
 	}
-	//defer os.RemoveAll(dir)
+	defer os.RemoveAll(dir)
 	appName := "export-db-" + uniuri.New()
 
 	_, err = cliConnection.CliCommand("push", appName, "-p", dir, "-f", filepath.Join(dir, "manifest.yml"))
