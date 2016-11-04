@@ -17,15 +17,16 @@ The list of the services that can store the data is:
 ## Commands
 There are five commands:
 
-- `cf export-data` - Interactively creates an application, binds to your
+1. `cf export-data` - Interactively creates an application, binds to your
  service, streams the data from your service to a S3 bucket.
-- `cf import-data` - Interactively creates an application, binds to your
+1. `cf import-data` - Interactively creates an application, binds to your
  new service, streams the data from the S3 bucket to the new service.
- - `cf download-backup-data` - Interactively selects the backup data from an
+1. `cf download-backup-data` - Interactively selects the backup data from an
  existing exported data dump (must run `cf export-data` first) and downloads it
  locally to your computer.
- - `cf upload-backup-data [file]` - Uploads a local file into an existing
+1. `cf upload-backup-data [file]` - Uploads a local file into an existing
  exported data dump (must run `cf export-data` first).
+1. `cf clean-export-config` will clean your config file and create a new one.
 
 ## Installation
 - Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-export-db/releases/download/v0.0.2/windows-32-cg-export-db.exe`
@@ -38,11 +39,13 @@ There are five commands:
 ### 1. Migrating From EW to GovCloud in 4 Steps!
 #### Pre-Reqs
 In E/W, you need to have:
+
 1. A S3 bucket already created to stream the dump in the same space as your database.
-  - If you do not have a S3 bucket, you can create one with `cf create-service s3 basic MyS3Bucket`
-1. A MySQL or Postgres database already created in your space.
+  - If you do not have a S3 bucket, you can create one with `cf create-service s3 basic MyS3Bucket`.
+2. A MySQL or Postgres database already created in your space.
 
 In GovCloud:
+
 1. A MySQL or Postgres database already created in your space.
 
 #### Running
@@ -56,7 +59,7 @@ cf api https://api.cloud.gov && cf login --sso
 # Go and export your data
 cf export-data
 
-# Login into GovCloud cloud.go
+# Login into GovCloud cloud.gov
 cf api https://api.fr.cloud.gov && cf login --sso
 
 # Go and import your data
