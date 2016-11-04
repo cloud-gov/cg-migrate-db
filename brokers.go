@@ -18,6 +18,8 @@ func (c AWSRDSChecker) IsCompatibleSource(service plugin_models.GetServices_Mode
 	}
 	if strings.Contains(service.ServicePlan.Name, "mysql") {
 		return true
+	} else if strings.Contains(service.ServicePlan.Name, "psql") {
+		return true
 	}
 	return false
 }

@@ -14,10 +14,16 @@ import (
 var defaultS3Key = "db.sql"
 
 func newAWSSession(s3Creds S3Creds) (*session.Session, error) {
+	region := s3Creds.Region
+	// At one point,
+	if region == "" {
+		region = "us-east-1"
+		fmt.Printf("Unable to find a region, assuming region %s because E/W deployment never specified the region\n", region)
+	}
 	return session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(s3Creds.AccessKeyId, s3Creds.SecretAccessKey, ""),
-			Region: aws.String(s3Creds.Region),
+			Region: aws.String(region),
 		},
 	})
 }

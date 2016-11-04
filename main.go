@@ -89,7 +89,7 @@ func (p *ExportPlugin) GetMetadata() plugin.PluginMetadata {
 		Version: plugin.VersionType{
 			Major: 0,
 			Minor: 0,
-			Build: 1,
+			Build: 2,
 		},
 		Commands: []plugin.Command{
 			{
@@ -259,7 +259,7 @@ func (p *ExportPlugin) exportData(cliConnection plugin.CliConnection) error {
 }
 
 func getDefaultSources() []string {
-	return []string{"mysql"}
+	return []string{"mysql", "psql"}
 }
 
 func (p *ExportPlugin) importData(cliConnection plugin.CliConnection) error {
@@ -393,6 +393,10 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 	if err != nil {
 		return fmt.Errorf("Unable to find manifest.yml")
 	}
+	commonPy, err := Asset(filepath.Join("pycommon", "common.py"))
+	if err != nil {
+		return fmt.Errorf("Unable to find common.py")
+	}
 
 
 
@@ -409,6 +413,10 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 		return err
 	}
 	err = ioutil.WriteFile(filepath.Join(dir, "import.py"), importProgram, 0664)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "common.py"), commonPy, 0664)
 	if err != nil {
 		return err
 	}
@@ -442,6 +450,10 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 	if err != nil {
 		return fmt.Errorf("Unable to find manifest.yml")
 	}
+	commonPy, err := Asset(filepath.Join("pycommon", "common.py"))
+	if err != nil {
+		return fmt.Errorf("Unable to find common.py")
+	}
 	dir, err := ioutil.TempDir("", "export-data-plugin")
 	if err != nil {
 		return err
@@ -455,6 +467,10 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 		return fmt.Errorf("Unable to find export.py")
 	}
 	err = ioutil.WriteFile(filepath.Join(dir, "Procfile"), procfile, 0664)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "common.py"), commonPy, 0664)
 	if err != nil {
 		return err
 	}
@@ -501,6 +517,7 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 // Right now, we can't because it's in the main package.
 // https://github.com/jthomas/copyenv/issues/7
 func (p *ExportPlugin) getVCAPServicesEnv(cliConnection plugin.CliConnection, app plugin_models.GetAppModel, store plugin_models.GetServices_Model) (Service, error) {
+	// Get the env vars from a cf curl.
 	out, err := cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v2/apps/%s/env", app.Guid))
 	if err != nil {
 		return nil, err
@@ -518,20 +535,8 @@ func (p *ExportPlugin) getVCAPServicesEnv(cliConnection plugin.CliConnection, ap
 	if !ok || len(vcap) < 1 {
 		return nil, fmt.Errorf("Unable to find VCAP_SERVICES in environment vars for app %s", app.Name)
 	}
-	s3Services, ok := vcap["s3"].([]interface{})
-	if !ok || len(s3Services) < 1 {
-		return nil, fmt.Errorf("Unable to find s3 service in environment vars for app %s", app.Name)
+	if _, ok := vcap["s3"]; ok {
+		return createS3Store(vcap, app, store)
 	}
-	for _, s3Service := range s3Services {
-		raw, _ := json.Marshal(s3Service)
-		var s3Store S3Store
-		err = json.Unmarshal(raw, &s3Store)
-		if err != nil {
-			return nil, fmt.Errorf("Unable to convert s3 store in environment vars for app %s", app.Name)
-		}
-		if s3Store.Name == store.Name {
-			return s3Store, nil
-		}
-	}
-	return nil, fmt.Errorf("Unable to find the vcap service env vars for service %s in app %s", store.Name, app.Name)
+	return nil, fmt.Errorf("Couldn't find a service type to store to find the vcap service env vars for service %s in app %s", store.Name, app.Name)
 }
