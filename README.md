@@ -17,16 +17,68 @@ The list of the services that can store the data is:
 ## Commands
 There are five commands:
 
-1. `cf export-data` - Interactively creates an application, binds to your
- service, streams the data from your service to a S3 bucket.
-1. `cf import-data` - Interactively creates an application, binds to your
- new service, streams the data from the S3 bucket to the new service.
-1. `cf download-backup-data` - Interactively selects the backup data from an
- existing exported data dump (must run `cf export-data` first) and downloads it
- locally to your computer.
-1. `cf upload-backup-data [file]` - Uploads a local file into an existing
- exported data dump (must run `cf export-data` first).
-1. `cf clean-export-config` will clean your config file and create a new one.
+### `cf export-data`
+**Creates a backup your data**
+
+Interactively creates an application, binds to your
+service, streams the data from your service to a S3 bucket.
+
+**Usage**:
+
+```sh
+cf export-data
+```
+
+**Note**
+
+You will need to already have the S3 bucket created.
+If you do not have it, you can do so by running:
+```sh
+cf create-service s3 basic YourS3BackupNameHere
+```
+
+### `cf import-data`
+**Restores a backup of your data**
+
+Interactively creates an application, binds to your
+new service, streams the data from the S3 bucket to the new service.
+
+**Usage:**
+```sh
+cf import-data
+```
+
+### `cf download-backup-data`
+**Download a backup to your local computer**
+
+Interactively selects the backup data from an
+existing exported data dump (must run `cf export-data` first) and downloads it
+locally to your computer.
+
+**Usage:**
+```sh
+cf download-backup-data
+```
+
+### `cf upload-backup-data`
+**Uploads a backup from your local computer**
+
+Uploads a local file into an existing exported data dump
+(must run `cf export-data` first). It will get renamed appropriately upon
+upload automatically.
+
+**Usage:**
+```sh
+cf upload-backup-data YourFilePathHere
+```
+
+### `cf clean-export-config`
+**Cleans your config file and create a new one.**
+
+**Usage:**
+```sh
+cf clean-export-config
+```
 
 ## Installation
 - Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-export-db/releases/download/v0.0.2/windows-32-cg-export-db.exe`
@@ -48,7 +100,7 @@ In GovCloud:
 
 1. A MySQL or Postgres database already created in your space.
 
-#### Running
+#### Migrating Data From EW To GovCloud
 ```sh
 # Login into EW cloud.gov
 cf api https://api.cloud.gov && cf login --sso
