@@ -29,6 +29,14 @@ service, streams the data from your service to a S3 bucket.
 cf export-data
 ```
 
+**Note**
+
+You will need to already have the S3 bucket created.
+If you do not have it, you can do so by running:
+```sh
+cf create-service s3 basic YourS3BackupNameHere
+```
+
 ### `cf import-data`
 **Restores a backup of your data**
 
@@ -61,7 +69,7 @@ upload automatically.
 
 **Usage:**
 ```sh
-cf upload-backup-data YourFileHere
+cf upload-backup-data YourFilePathHere
 ```
 
 ### `cf clean-export-config`
