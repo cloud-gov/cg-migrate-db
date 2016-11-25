@@ -1,4 +1,5 @@
-PLUGIN_PATH=$GOPATH/src/github.com/18F/cg-export-db
+#!/usr/bin/env bash
+PLUGIN_PATH=$GOPATH/src/github.com/18F/cg-migrate-db
 PLUGIN_NAME=$(basename $PLUGIN_PATH)
 
 rm -rf $PLUGIN_PATH/releases
