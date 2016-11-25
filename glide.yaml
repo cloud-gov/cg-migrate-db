@@ -1,4 +1,4 @@
-package: github.com/18F/cg-export-db
+package: github.com/18F/cg-migrate-db
 import:
 - package: code.cloudfoundry.org/cli
   subpackages:

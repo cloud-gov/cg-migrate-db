@@ -85,7 +85,7 @@ type ExportPlugin struct {
 
 func (p *ExportPlugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name: "cg-export-db",
+		Name: "cg-migrate-db",
 		Version: plugin.VersionType{
 			Major: 0,
 			Minor: 0,
