@@ -287,14 +287,14 @@ func AssetNames() []string {
 
 // _bindata is a table, holding each asset generator, mapped to its name.
 var _bindata = map[string]func() (*asset, error){
-	"import/Procfile": importProcfile,
-	"import/import.py": importImportPy,
+	"import/Procfile":     importProcfile,
+	"import/import.py":    importImportPy,
 	"import/manifest.yml": importManifestYml,
-	"export/.DS_Store": exportDs_store,
-	"export/Procfile": exportProcfile,
-	"export/export.py": exportExportPy,
+	"export/.DS_Store":    exportDs_store,
+	"export/Procfile":     exportProcfile,
+	"export/export.py":    exportExportPy,
 	"export/manifest.yml": exportManifestYml,
-	"pycommon/common.py": pycommonCommonPy,
+	"pycommon/common.py":  pycommonCommonPy,
 }
 
 // AssetDir returns the file names below a certain
@@ -336,16 +336,17 @@ type bintree struct {
 	Func     func() (*asset, error)
 	Children map[string]*bintree
 }
+
 var _bintree = &bintree{nil, map[string]*bintree{
 	"export": &bintree{nil, map[string]*bintree{
-		".DS_Store": &bintree{exportDs_store, map[string]*bintree{}},
-		"Procfile": &bintree{exportProcfile, map[string]*bintree{}},
-		"export.py": &bintree{exportExportPy, map[string]*bintree{}},
+		".DS_Store":    &bintree{exportDs_store, map[string]*bintree{}},
+		"Procfile":     &bintree{exportProcfile, map[string]*bintree{}},
+		"export.py":    &bintree{exportExportPy, map[string]*bintree{}},
 		"manifest.yml": &bintree{exportManifestYml, map[string]*bintree{}},
 	}},
 	"import": &bintree{nil, map[string]*bintree{
-		"Procfile": &bintree{importProcfile, map[string]*bintree{}},
-		"import.py": &bintree{importImportPy, map[string]*bintree{}},
+		"Procfile":     &bintree{importProcfile, map[string]*bintree{}},
+		"import.py":    &bintree{importImportPy, map[string]*bintree{}},
 		"manifest.yml": &bintree{importManifestYml, map[string]*bintree{}},
 	}},
 	"pycommon": &bintree{nil, map[string]*bintree{
@@ -399,4 +400,3 @@ func _filePath(dir, name string) string {
 	cannonicalName := strings.Replace(name, "\\", "/", -1)
 	return filepath.Join(append([]string{dir}, strings.Split(cannonicalName, "/")...)...)
 }
-

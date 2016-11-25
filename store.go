@@ -1,10 +1,10 @@
 package main
 
 import (
+	"code.cloudfoundry.org/cli/plugin/models"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"encoding/json"
-	"code.cloudfoundry.org/cli/plugin/models"
 )
 
 type GenericService struct {
