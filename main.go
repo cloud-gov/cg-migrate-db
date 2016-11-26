@@ -186,7 +186,6 @@ func (p *ExportPlugin) downloadBackupData(cliConnection plugin.CliConnection) er
 	return nil
 }
 
-
 func (p *ExportPlugin) uploadBackupData(cliConnection plugin.CliConnection, args []string) error {
 	if len(p.config.Entries) < 1 {
 		return fmt.Errorf("Please run export-data in order for the plugin to get the credentials to a s3 bucket")
@@ -198,7 +197,7 @@ func (p *ExportPlugin) uploadBackupData(cliConnection plugin.CliConnection, args
 	path := args[1]
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Unable to access file %s. Error: %s", file, err.Error())
+		return fmt.Errorf("Unable to access file %s. Error: %s", file.Name(), err.Error())
 	}
 	defer file.Close()
 	configEntry, err := p.promptImportSelection("Input the number for the service you want to use to upload the backup\n")
@@ -302,7 +301,7 @@ func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error)
 	i := -1
 	_, err := fmt.Scan(&i)
 	if err != nil {
-		fmt.Errorf("Inavlid input...\n")
+		fmt.Printf("Inavlid input...\n")
 		return ConfigEntry{}, err
 	}
 	if i < 0 || i >= len(p.config.Entries) {
@@ -311,7 +310,7 @@ func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error)
 	return p.config.Entries[i], nil
 }
 
-func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
+func (p *ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
 	var supportedServices []string
 	for _, serviceInstanceType := range serviceInstanceTypes {
 		if strings.Contains(plan, serviceInstanceType) {
@@ -320,7 +319,6 @@ func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanc
 	}
 	return supportedServices
 }
-
 
 func (p *ExportPlugin) findSupportedServices(services []plugin_models.GetServices_Model, serviceInstanceTypes ...string) []plugin_models.GetServices_Model {
 	var supportedServices []plugin_models.GetServices_Model
@@ -375,7 +373,7 @@ func (p *ExportPlugin) promptServiceSelection(services []plugin_models.GetServic
 	i := -1
 	_, err := fmt.Scan(&i)
 	if err != nil {
-		fmt.Errorf("Inavlid input...\n")
+		fmt.Printf("Inavlid input...\n")
 		return plugin_models.GetServices_Model{}, err
 	}
 	if i < 0 || i >= len(services) {
@@ -397,8 +395,6 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 	if err != nil {
 		return fmt.Errorf("Unable to find common.py")
 	}
-
-
 
 	dir, err := ioutil.TempDir("", "export-data-plugin")
 	if err != nil {

@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/aws/aws-sdk-go/aws/session"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
-	"log"
-	"fmt"
-	"os"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"log"
+	"os"
 )
 
 var defaultS3Key = "db.sql"
@@ -23,7 +23,7 @@ func newAWSSession(s3Creds S3Creds) (*session.Session, error) {
 	return session.NewSessionWithOptions(session.Options{
 		Config: aws.Config{
 			Credentials: credentials.NewStaticCredentials(s3Creds.AccessKeyId, s3Creds.SecretAccessKey, ""),
-			Region: aws.String(region),
+			Region:      aws.String(region),
 		},
 	})
 }
@@ -65,7 +65,7 @@ func uploadFile(s3Creds S3Creds, file *os.File) error {
 		Key:    aws.String(defaultS3Key),
 	})
 	if err != nil {
-		fmt.Errorf("Failed to upload. %s", err)
+		return fmt.Errorf("Failed to upload. %s", err)
 	}
 
 	log.Println("Successfully uploaded to", result.Location)
