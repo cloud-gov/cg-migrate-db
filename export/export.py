@@ -29,7 +29,7 @@ def find_s3_bucket_creds(vcap):
 def backup():
     if os.environ['VCAP_SERVICES']:
         vcap = json.loads(os.environ.get('VCAP_SERVICES'))
-        services = vcap['aws-rds']
+        services = vcap.get('aws-rds', []) + vcap.get('rds', [])
         for service in services:
             if service['name'] == os.environ.get('SOURCE_SERVICE'):
                 creds = service['credentials']
