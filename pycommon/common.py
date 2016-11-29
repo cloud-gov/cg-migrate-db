@@ -4,6 +4,7 @@
 import os
 import http.server
 import socketserver
+import sys
 
 def build_psql_env(creds):
     return 'PGHOST={} PGDATABASE={} PGUSER={} PGPASSWORD={}'.format(creds['host'], creds['db_name'], creds['username'], creds['password'])
@@ -29,7 +30,7 @@ def build_aws_env_var(access, secret, region):
     return env
 
 def install_aws_cli():
-    os.system("awscli-bundle/awscli-bundle/install -b ~/bin/aws")
+    return os.system("awscli-bundle/awscli-bundle/install -b ~/bin/aws")
 
 def get_aws_cli_location():
     if os.path.isfile("/home/vcap/bin/aws"):
@@ -39,7 +40,9 @@ def get_aws_cli_location():
     return ""
 
 def setup():
-    install_aws_cli()
+    retval = install_aws_cli()
+    if retval != 0:
+        sys.exit(1)
 
 def run_server():
     # Create a server in order to download the files.
