@@ -1,5 +1,5 @@
 build:
-				go-bindata import/... export/... pycommon/...
+				go-bindata resources/...
 				go build
 clean:
 				cf uninstall-plugin cg-migrate-db
