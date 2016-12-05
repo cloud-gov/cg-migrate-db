@@ -384,43 +384,95 @@ func (p *ExportPlugin) promptServiceSelection(services []plugin_models.GetServic
 	return services[i], nil
 }
 
-func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target plugin_models.GetServices_Model, entry ConfigEntry) error {
-	importProgram, err := Asset(filepath.Join("import", "import.py"))
-	if err != nil {
-		return fmt.Errorf("Unable to find import.py")
-	}
-	manifestData, err := Asset(filepath.Join("import", "manifest.yml"))
-	if err != nil {
-		return fmt.Errorf("Unable to find manifest.yml")
-	}
-	commonPy, err := Asset(filepath.Join("pycommon", "common.py"))
+type commonDeployConfig struct {
+	dir string
+	scriptFile string
+}
+
+func (p *ExportPlugin) getCommonFiles(c commonDeployConfig) error {
+	commonPy, err := Asset(filepath.Join("resources", "common.py"))
 	if err != nil {
 		return fmt.Errorf("Unable to find common.py")
 	}
+	req, err := Asset(filepath.Join("resources", "requirements.txt"))
+	if err != nil {
+		return fmt.Errorf("Unable to find requirements.txt")
+	}
+	runtime, err := Asset(filepath.Join("resources", "runtime.txt"))
+	if err != nil {
+		return fmt.Errorf("Unable to find runtime.txt")
+	}
+	procfile, err := Asset(filepath.Join("resources", "Procfile"))
+	if err != nil {
+		return fmt.Errorf("Unable to find Procfile")
+	}
 
+	err = ioutil.WriteFile(filepath.Join(c.dir, "common.py"), commonPy, 0664)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(c.dir, "runtime.txt"), runtime, 0664)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(c.dir, "requirements.txt"), req, 0664)
+	if err != nil {
+		return err
+	}
+	procfile = bytes.Replace(procfile, []byte("REPLACE_SCRIPT"), []byte(c.scriptFile), -1)
+	err = ioutil.WriteFile(filepath.Join(c.dir, "Procfile"), procfile, 0664)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target plugin_models.GetServices_Model, entry ConfigEntry) error {
+	scriptFile := "import.py"
+	importProgram, err := Asset(filepath.Join("resources", scriptFile))
+	if err != nil {
+		return fmt.Errorf("Unable to find %s", scriptFile)
+	}
+	manifestData, err := Asset(filepath.Join("resources", "manifest_import.yml"))
+	if err != nil {
+		return fmt.Errorf("Unable to find manifest.yml")
+	}
+
+
+	mysqlexe, err := Asset(filepath.Join("resources", "bin", "mysql"))
+	if err != nil {
+		return fmt.Errorf("Unable to find mysql")
+	}
+
+	pgRestore, err := Asset(filepath.Join("resources", "bin", "pg_restore"))
+	if err != nil {
+		return fmt.Errorf("Unable to find pg_restore")
+	}
 
 
 	dir, err := ioutil.TempDir("", "export-data-plugin")
 	if err != nil {
 		return err
 	}
-	procfile, err := Asset(filepath.Join("export", "Procfile"))
-	if err != nil {
-		return fmt.Errorf("Unable to find export.py")
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, "Procfile"), procfile, 0664)
+	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(dir, "import.py"), importProgram, 0664)
+	os.Mkdir(filepath.Join(dir, "bin"), 0700)
+	err = ioutil.WriteFile(filepath.Join(dir, "bin", "mysql"), mysqlexe, 0700)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(dir, "common.py"), commonPy, 0664)
+	err = ioutil.WriteFile(filepath.Join(dir, "bin", "pg_restore"), pgRestore, 0700)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, scriptFile), importProgram, 0664)
 	if err != nil {
 		return err
 	}
 	// Replace services in manifest
+	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SCRIPT"), []byte(scriptFile), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_TARGET"), []byte(target.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACETARGETSERVICE"), []byte(target.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACESTORETYPE"), []byte(entry.StoreServiceType), -1)
@@ -442,39 +494,47 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 }
 
 func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source, store plugin_models.GetServices_Model) error {
-	exportProgram, err := Asset(filepath.Join("export", "export.py"))
+	scriptFile := "export.py"
+	exportProgram, err := Asset(filepath.Join("resources", scriptFile))
 	if err != nil {
-		return fmt.Errorf("Unable to find export.py")
+		return fmt.Errorf("Unable to find %s", scriptFile)
 	}
-	manifestData, err := Asset(filepath.Join("export", "manifest.yml"))
+	manifestData, err := Asset(filepath.Join("resources", "manifest_export.yml"))
 	if err != nil {
 		return fmt.Errorf("Unable to find manifest.yml")
 	}
-	commonPy, err := Asset(filepath.Join("pycommon", "common.py"))
+	mysqlDump, err := Asset(filepath.Join("resources", "bin", "mysqldump"))
 	if err != nil {
-		return fmt.Errorf("Unable to find common.py")
+		return fmt.Errorf("Unable to find mysqldump")
 	}
+	pgDump, err := Asset(filepath.Join("resources", "bin", "pg_dump"))
+	if err != nil {
+		return fmt.Errorf("Unable to find pg_dump")
+	}
+
 	dir, err := ioutil.TempDir("", "export-data-plugin")
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(dir, "export.py"), exportProgram, 0664)
+	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
 	if err != nil {
 		return err
 	}
-	procfile, err := Asset(filepath.Join("export", "Procfile"))
-	if err != nil {
-		return fmt.Errorf("Unable to find export.py")
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, "Procfile"), procfile, 0664)
+	err = ioutil.WriteFile(filepath.Join(dir, scriptFile), exportProgram, 0664)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filepath.Join(dir, "common.py"), commonPy, 0664)
+	os.Mkdir(filepath.Join(dir, "bin"), 0700)
+	err = ioutil.WriteFile(filepath.Join(dir, "bin", "mysqldump"), mysqlDump, 0700)
+	if err != nil {
+		return err
+	}
+	err = ioutil.WriteFile(filepath.Join(dir, "bin", "pg_dump"), pgDump, 0700)
 	if err != nil {
 		return err
 	}
 	// Replace services in manifest
+	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SCRIPT"), []byte(scriptFile), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_STORE"), []byte(store.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SOURCE"), []byte(source.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACESOURCESERVICE"), []byte(source.Name), -1)
