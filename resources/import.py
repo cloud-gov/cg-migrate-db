@@ -28,7 +28,7 @@ def restore_psql(creds, store_stream_cmd):
 def import_data():
     if os.environ['VCAP_SERVICES']:
         vcap = json.loads(os.environ.get('VCAP_SERVICES'))
-        services = vcap['aws-rds']
+        services = vcap.get('aws-rds', []) + vcap.get('rds', [])
         for service in services:
             if service['name'] == os.environ.get('TARGET_SERVICE'):
                 creds = service['credentials']
