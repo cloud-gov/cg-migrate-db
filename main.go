@@ -413,59 +413,52 @@ func (p *ExportPlugin) getCommonFiles(c commonDeployConfig) error {
 
 func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target plugin_models.GetServices_Model, entry ConfigEntry) error {
 	scriptFile := "import.py"
-	importProgram, err := Asset(filepath.Join("resources", scriptFile))
-	if err != nil {
-		return fmt.Errorf("Unable to find %s", scriptFile)
-	}
-	manifestData, err := Asset(filepath.Join("resources", "manifest_import.yml"))
-	if err != nil {
-		return fmt.Errorf("Unable to find manifest.yml")
-	}
-
-
-	mysqlexe, err := Asset(filepath.Join("resources", "bin", "mysql"))
-	if err != nil {
-		return fmt.Errorf("Unable to find mysql")
-	}
-
-	pgRestore, err := Asset(filepath.Join("resources", "bin", "pg_restore"))
-	if err != nil {
-		return fmt.Errorf("Unable to find pg_restore")
-	}
-
-
-	dir, err := ioutil.TempDir("", "export-data-plugin")
-	if err != nil {
-		return err
-	}
-	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
-	if err != nil {
-		return err
-	}
-	os.Mkdir(filepath.Join(dir, "bin"), 0700)
-	err = ioutil.WriteFile(filepath.Join(dir, "bin", "mysql"), mysqlexe, 0700)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, "bin", "pg_restore"), pgRestore, 0700)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, scriptFile), importProgram, 0664)
-	if err != nil {
-		return err
-	}
-	// Replace services in manifest
-	manifestData = bytes.Replace(manifestData, []byte("REPLACE_TARGET"), []byte(target.Name), -1)
-	manifestData = bytes.Replace(manifestData, []byte("REPLACETARGETSERVICE"), []byte(target.Name), -1)
-	manifestData = bytes.Replace(manifestData, []byte("REPLACESTORETYPE"), []byte(entry.StoreServiceType), -1)
-	creds, _ := json.Marshal(entry.Credentials)
-	manifestData = bytes.Replace(manifestData, []byte("REPLACECREDENTIALS"), []byte(fmt.Sprintf("'%s'", string(creds))), -1)
-	err = ioutil.WriteFile(filepath.Join(dir, "manifest.yml"), manifestData, 0664)
+	// create a random temp folder
+	dir, err := ioutil.TempDir("", p.GetMetadata().Name)
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
+	// create the bin folder
+	err = os.Mkdir(filepath.Join(dir, "bin"), 0700)
+	if err != nil {
+		return err
+	}
+	// get the common files.
+	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
+	if err != nil {
+		return err
+	}
+	// get the files specific to the import app
+	files := []string{scriptFile, "manifest_import.yml", filepath.Join("bin", "mysql"), filepath.Join("bin", "pg_restore")}
+	for _, file := range files {
+		// Retrieve the file.
+		asset, err := Asset(filepath.Join("resources", file))
+		if err != nil {
+			return fmt.Errorf("Unable to find %s", file)
+		}
+		access := os.FileMode(0700)
+		// Make any special changes
+		switch file {
+		case "manifest_import.yml":
+			access = os.FileMode(0644)
+			asset = bytes.Replace(asset, []byte("REPLACE_TARGET"), []byte(target.Name), -1)
+			asset = bytes.Replace(asset, []byte("REPLACETARGETSERVICE"), []byte(target.Name), -1)
+			asset = bytes.Replace(asset, []byte("REPLACESTORETYPE"), []byte(entry.StoreServiceType), -1)
+			creds, _ := json.Marshal(entry.Credentials)
+			asset = bytes.Replace(asset, []byte("REPLACECREDENTIALS"), []byte(fmt.Sprintf("'%s'", string(creds))), -1)
+			file = "manifest.yml"
+		case scriptFile:
+			access = os.FileMode(0644)
+		}
+		// Write the file to the specified folder.
+		err = ioutil.WriteFile(filepath.Join(dir, file), asset, access)
+		if err != nil {
+			return err
+		}
+	}
+
+	// push the app.
 	appName := "import-db-" + uniuri.New()
 
 	_, err = cliConnection.CliCommand("push", appName, "-p", dir, "-f", filepath.Join(dir, "manifest.yml"))
@@ -478,53 +471,50 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 
 func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source, store plugin_models.GetServices_Model) error {
 	scriptFile := "export.py"
-	exportProgram, err := Asset(filepath.Join("resources", scriptFile))
-	if err != nil {
-		return fmt.Errorf("Unable to find %s", scriptFile)
-	}
-	manifestData, err := Asset(filepath.Join("resources", "manifest_export.yml"))
-	if err != nil {
-		return fmt.Errorf("Unable to find manifest.yml")
-	}
-	mysqlDump, err := Asset(filepath.Join("resources", "bin", "mysqldump"))
-	if err != nil {
-		return fmt.Errorf("Unable to find mysqldump")
-	}
-	pgDump, err := Asset(filepath.Join("resources", "bin", "pg_dump"))
-	if err != nil {
-		return fmt.Errorf("Unable to find pg_dump")
-	}
 
-	dir, err := ioutil.TempDir("", "export-data-plugin")
-	if err != nil {
-		return err
-	}
-	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, scriptFile), exportProgram, 0664)
-	if err != nil {
-		return err
-	}
-	os.Mkdir(filepath.Join(dir, "bin"), 0700)
-	err = ioutil.WriteFile(filepath.Join(dir, "bin", "mysqldump"), mysqlDump, 0700)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(dir, "bin", "pg_dump"), pgDump, 0700)
-	if err != nil {
-		return err
-	}
-	// Replace services in manifest
-	manifestData = bytes.Replace(manifestData, []byte("REPLACE_STORE"), []byte(store.Name), -1)
-	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SOURCE"), []byte(source.Name), -1)
-	manifestData = bytes.Replace(manifestData, []byte("REPLACESOURCESERVICE"), []byte(source.Name), -1)
-	err = ioutil.WriteFile(filepath.Join(dir, "manifest.yml"), manifestData, 0664)
+	// create a random temp folder
+	dir, err := ioutil.TempDir("", p.GetMetadata().Name)
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(dir)
+	// create the bin folder
+	err = os.Mkdir(filepath.Join(dir, "bin"), 0700)
+	if err != nil {
+		return err
+	}
+	// get the common files.
+	err = p.getCommonFiles(commonDeployConfig{dir: dir, scriptFile: scriptFile})
+	if err != nil {
+		return err
+	}
+	// get the files specific to the import app
+	files := []string{scriptFile, "manifest_export.yml", filepath.Join("bin", "mysqldump"), filepath.Join("bin", "pg_dump")}
+	for _, file := range files {
+		// Retrieve the file.
+		asset, err := Asset(filepath.Join("resources", file))
+		if err != nil {
+			return fmt.Errorf("Unable to find %s", file)
+		}
+		access := os.FileMode(0700)
+		// Make any special changes
+		switch file {
+		case "manifest_export.yml":
+			access = os.FileMode(0644)
+			asset = bytes.Replace(asset, []byte("REPLACE_STORE"), []byte(store.Name), -1)
+			asset = bytes.Replace(asset, []byte("REPLACE_SOURCE"), []byte(source.Name), -1)
+			asset = bytes.Replace(asset, []byte("REPLACESOURCESERVICE"), []byte(source.Name), -1)
+			file = "manifest.yml"
+		case scriptFile:
+			access = os.FileMode(0644)
+		}
+		// Write the file to the specified folder.
+		err = ioutil.WriteFile(filepath.Join(dir, file), asset, access)
+		if err != nil {
+			return err
+		}
+	}
+
 	appName := "export-db-" + uniuri.New()
 
 	_, err = cliConnection.CliCommand("push", appName, "-p", dir, "-f", filepath.Join(dir, "manifest.yml"))
