@@ -390,39 +390,23 @@ type commonDeployConfig struct {
 }
 
 func (p *ExportPlugin) getCommonFiles(c commonDeployConfig) error {
-	commonPy, err := Asset(filepath.Join("resources", "common.py"))
-	if err != nil {
-		return fmt.Errorf("Unable to find common.py")
-	}
-	req, err := Asset(filepath.Join("resources", "requirements.txt"))
-	if err != nil {
-		return fmt.Errorf("Unable to find requirements.txt")
-	}
-	runtime, err := Asset(filepath.Join("resources", "runtime.txt"))
-	if err != nil {
-		return fmt.Errorf("Unable to find runtime.txt")
-	}
-	procfile, err := Asset(filepath.Join("resources", "Procfile"))
-	if err != nil {
-		return fmt.Errorf("Unable to find Procfile")
-	}
-
-	err = ioutil.WriteFile(filepath.Join(c.dir, "common.py"), commonPy, 0664)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(c.dir, "runtime.txt"), runtime, 0664)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(filepath.Join(c.dir, "requirements.txt"), req, 0664)
-	if err != nil {
-		return err
-	}
-	procfile = bytes.Replace(procfile, []byte("REPLACE_SCRIPT"), []byte(c.scriptFile), -1)
-	err = ioutil.WriteFile(filepath.Join(c.dir, "Procfile"), procfile, 0664)
-	if err != nil {
-		return err
+	files := []string{"common.py", "requirements.txt", "runtime.txt", "Procfile"}
+	for _, file := range files {
+		// Retrieve the file.
+		asset, err := Asset(filepath.Join("resources", file))
+		if err != nil {
+			return fmt.Errorf("Unable to find %s", file)
+		}
+		// Make any special changes
+		switch file {
+		case "Procfile":
+			asset = bytes.Replace(asset, []byte("REPLACE_SCRIPT"), []byte(c.scriptFile), -1)
+		}
+		// Write the file to the specified folder.
+		err = ioutil.WriteFile(filepath.Join(c.dir, file), asset, 0664)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -472,7 +456,6 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 		return err
 	}
 	// Replace services in manifest
-	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SCRIPT"), []byte(scriptFile), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_TARGET"), []byte(target.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACETARGETSERVICE"), []byte(target.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACESTORETYPE"), []byte(entry.StoreServiceType), -1)
@@ -534,7 +517,6 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 		return err
 	}
 	// Replace services in manifest
-	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SCRIPT"), []byte(scriptFile), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_STORE"), []byte(store.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACE_SOURCE"), []byte(source.Name), -1)
 	manifestData = bytes.Replace(manifestData, []byte("REPLACESOURCESERVICE"), []byte(source.Name), -1)
