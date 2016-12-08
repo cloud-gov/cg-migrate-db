@@ -2,6 +2,13 @@
 
 `cg-migrate-db` is a Cloud Foundry CLI Plugin for migrating the data of services.
 
+## Installation
+- Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/windows-32-cg-migrate-db.exe`
+- Windows 64Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/windows-64-cg-migrate-db.exe`
+- Mac OS X: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/mac-cg-migrate-db`
+- Linux 32Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/linux-32-cg-migrate-db`
+- Linux 64Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/linux-64-cg-migrate-db`
+
 ## Pre-Reqs
 ### Supported Services
 You **MUST** use one of these services in order to use this plugin to
@@ -79,13 +86,6 @@ cf upload-backup-data YourFilePathHere
 ```sh
 cf clean-export-config
 ```
-
-## Installation
-- Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.2/windows-32-cg-export-db.exe`
-- Windows 64Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.2/windows-64-cg-export-db.exe`
-- Mac OS X: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.2/mac-cg-export-db`
-- Linux 32Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.2/linux-32-cg-export-db`
-- Linux 64Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.2/linux-64-cg-export-db`
 
 ## Common Use Cases
 ### 1. Migrating From EW to GovCloud in 4 Steps!
