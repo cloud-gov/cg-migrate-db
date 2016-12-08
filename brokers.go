@@ -13,7 +13,7 @@ type BrokerChecker interface {
 type AWSRDSChecker struct{}
 
 func (c AWSRDSChecker) IsCompatibleSource(service plugin_models.GetServices_Model) bool {
-	if service.Service.Name != "aws-rds" {
+	if service.Service.Name != "aws-rds" && service.Service.Name != "rds" {
 		return false
 	}
 	if strings.Contains(service.ServicePlan.Name, "mysql") {
