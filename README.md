@@ -76,7 +76,7 @@ upload automatically.
 
 **Usage:**
 ```sh
-cf upload-backup-data -p <file_path> [-store <name_of_s3_service]
+cf upload-backup-data -p <file_path> [-store <name_of_s3_service>]
 ```
 
 *Note: Providing the optional `-store` flag will run this command in
