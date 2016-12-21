@@ -2,17 +2,19 @@ package main
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/cli/cf/configuration/confighelpers"
-	"code.cloudfoundry.org/cli/cf/models"
-	"code.cloudfoundry.org/cli/plugin"
-	"code.cloudfoundry.org/cli/plugin/models"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"github.com/dchest/uniuri"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"code.cloudfoundry.org/cli/cf/configuration/confighelpers"
+	"code.cloudfoundry.org/cli/cf/models"
+	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/dchest/uniuri"
 )
 
 func main() {
@@ -186,22 +188,47 @@ func (p *ExportPlugin) downloadBackupData(cliConnection plugin.CliConnection) er
 	return nil
 }
 
+func (p *ExportPlugin) findGivenStoreFromConfig(store string) (ConfigEntry, error) {
+	for _, entry := range p.config.Entries {
+		if entry.StoreServiceName == store {
+			return entry, nil
+		}
+	}
+	return ConfigEntry{}, fmt.Errorf("Unable to find S3 service %s", store)
+}
 
-func (p *ExportPlugin) uploadBackupData(cliConnection plugin.CliConnection, args []string) error {
+func (p *ExportPlugin) uploadBackupData(cliConnection plugin.CliConnection,
+	args []string) error {
 	if len(p.config.Entries) < 1 {
-		return fmt.Errorf("Please run export-data in order for the plugin to get the credentials to a s3 bucket")
+		return fmt.Errorf("Please run export-data in order for the plugin to " +
+			"get the credentials to a s3 bucket")
+	}
+	uploadFlagSet := flag.NewFlagSet("upload-backup-data", flag.ExitOnError)
+	filePath := uploadFlagSet.String("p", "", "path to local DB backup")
+	storeFlag := uploadFlagSet.String("store", "", "S3 bucket to upload to.")
+
+	err := uploadFlagSet.Parse(args[1:])
+	if err != nil {
+		return err
+	}
+	if uploadFlagSet.Parsed() {
+		if *filePath == "" {
+			return fmt.Errorf("Please supply -p option")
+		}
 	}
 
-	if len(args) != 2 {
-		return fmt.Errorf("Not enough arguments for command. Check usage...")
-	}
-	path := args[1]
+	path := *filePath
 	file, err := os.Open(path)
 	if err != nil {
-		return fmt.Errorf("Unable to access file %s. Error: %s", file, err.Error())
+		return fmt.Errorf("Unable to access file %s. Error: %s", file.Name(), err.Error())
 	}
 	defer file.Close()
-	configEntry, err := p.promptImportSelection("Input the number for the service you want to use to upload the backup\n")
+	var configEntry ConfigEntry
+	if *storeFlag != "" {
+		configEntry, err = p.findGivenStoreFromConfig(*storeFlag)
+	} else {
+		configEntry, err = p.promptImportSelection("Input the number for the service you want to use to upload the backup\n")
+	}
 	if err != nil {
 		return err
 	}
@@ -302,8 +329,7 @@ func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error)
 	i := -1
 	_, err := fmt.Scan(&i)
 	if err != nil {
-		fmt.Errorf("Inavlid input...\n")
-		return ConfigEntry{}, err
+		return ConfigEntry{}, fmt.Errorf("Inavlid input...\n")
 	}
 	if i < 0 || i >= len(p.config.Entries) {
 		return ConfigEntry{}, fmt.Errorf("Number not in range\n")
@@ -311,7 +337,7 @@ func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error)
 	return p.config.Entries[i], nil
 }
 
-func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
+func (p *ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
 	var supportedServices []string
 	for _, serviceInstanceType := range serviceInstanceTypes {
 		if strings.Contains(plan, serviceInstanceType) {
@@ -320,7 +346,6 @@ func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanc
 	}
 	return supportedServices
 }
-
 
 func (p *ExportPlugin) findSupportedServices(services []plugin_models.GetServices_Model, serviceInstanceTypes ...string) []plugin_models.GetServices_Model {
 	var supportedServices []plugin_models.GetServices_Model
@@ -385,7 +410,7 @@ func (p *ExportPlugin) promptServiceSelection(services []plugin_models.GetServic
 }
 
 type commonDeployConfig struct {
-	dir string
+	dir        string
 	scriptFile string
 }
 

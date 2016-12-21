@@ -76,8 +76,11 @@ upload automatically.
 
 **Usage:**
 ```sh
-cf upload-backup-data YourFilePathHere
+cf upload-backup-data -p <file_path> [-store <name_of_s3_service>]
 ```
+
+*Note: Providing the optional `-store` flag will run this command in
+non-interactive mode.*
 
 ### `cf clean-export-config`
 **Cleans your config file and create a new one.**
