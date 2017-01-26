@@ -430,7 +430,7 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 		return err
 	}
 	// get the files specific to the import app
-	files := []string{scriptFile, "manifest_import.yml", filepath.Join("bin", "mysql"), filepath.Join("bin", "pg_restore")}
+	files := []string{scriptFile, "manifest_import.yml", filepath.Join("bin", "mysql"), filepath.Join("bin", "pg_restore"), filepath.Join("bin", "redis-cli")}
 	for _, file := range files {
 		// Retrieve the file.
 		asset, err := Asset(filepath.Join("resources", file))
@@ -489,7 +489,7 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 		return err
 	}
 	// get the files specific to the import app
-	files := []string{scriptFile, "manifest_export.yml", filepath.Join("bin", "mysqldump"), filepath.Join("bin", "pg_dump")}
+	files := []string{scriptFile, "manifest_export.yml", filepath.Join("bin", "mysqldump"), filepath.Join("bin", "pg_dump"), filepath.Join("bin", "redis-cli")}
 	for _, file := range files {
 		// Retrieve the file.
 		asset, err := Asset(filepath.Join("resources", file))

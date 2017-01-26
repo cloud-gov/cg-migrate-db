@@ -28,6 +28,19 @@ func (c AWSRDSChecker) IsCompatibleStore(service plugin_models.GetServices_Model
 	return false
 }
 
+type RedisChecker struct{}
+
+func (c RedisChecker) IsCompatibleSource(service plugin_models.GetServices_Model) bool {
+	if service.Service.Name != "redis28-swarm" && service.Service.Name != "redis28" {
+		return false
+	}
+	return true
+}
+
+func (c RedisChecker) IsCompatibleStore(service plugin_models.GetServices_Model) bool {
+	return false
+}
+
 type S3Checker struct{}
 
 func (c S3Checker) IsCompatibleSource(service plugin_models.GetServices_Model) bool {
@@ -42,7 +55,7 @@ func (c S3Checker) IsCompatibleStore(service plugin_models.GetServices_Model) bo
 }
 
 func checkSourceCompatibility(service plugin_models.GetServices_Model) bool {
-	checkers := []BrokerChecker{AWSRDSChecker{}, S3Checker{}}
+	checkers := []BrokerChecker{AWSRDSChecker{}, S3Checker{}, RedisChecker{}}
 	for _, checker := range checkers {
 		if checker.IsCompatibleSource(service) {
 			return true
@@ -52,7 +65,7 @@ func checkSourceCompatibility(service plugin_models.GetServices_Model) bool {
 }
 
 func checkStoreCompatibility(service plugin_models.GetServices_Model) bool {
-	checkers := []BrokerChecker{AWSRDSChecker{}, S3Checker{}}
+	checkers := []BrokerChecker{AWSRDSChecker{}, S3Checker{}, RedisChecker{}}
 	for _, checker := range checkers {
 		if checker.IsCompatibleStore(service) {
 			return true

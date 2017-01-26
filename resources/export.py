@@ -18,6 +18,12 @@ def backup_psql(creds, store_stream_cmd):
     command = '{} | {}'.format(psql_cred, store_stream_cmd)
     run_command(command)
 
+# use redis-cli SAVE to backup the database and stream the result into a given store.
+def backup_redis(creds, store_stream_cmd):
+    redis_cred = build_redis_cred_str(creds)
+    command = 'bin/redis-cli {} BGSAVE'.format(redis_cred)
+    run_command(command, True)
+
 # for export, we need to know the bound s3 bucket. for now, just get the first bucket.
 def find_s3_bucket_creds(vcap):
     s3 = vcap['s3'][0]['credentials']
@@ -28,10 +34,11 @@ def find_s3_bucket_creds(vcap):
 def backup():
     if os.environ['VCAP_SERVICES']:
         vcap = json.loads(os.environ.get('VCAP_SERVICES'))
-        services = vcap.get('aws-rds', []) + vcap.get('rds', [])
+        services = vcap.get('aws-rds', []) + vcap.get('rds', []) + vcap.get('redis28-swarm', []) + vcap.get('redis28', [])
         for service in services:
             if service['name'] == os.environ.get('SOURCE_SERVICE'):
                 creds = service['credentials']
+                label = service['label']
                 plan = service['plan']
                 if 's3' in vcap:
                     access, secret, bucket, region = find_s3_bucket_creds(vcap)
@@ -39,9 +46,12 @@ def backup():
                     if "mysql" in plan:
                         print("found bound s3 bucket and mysql database. will try to export to s3 bucket")
                         backup_mysql(creds, s3_cmd)
-                    if "psql" in plan:
+                    elif "psql" in plan:
                         print("found bound s3 bucket and psql database. will try to export to s3 bucket")
                         backup_psql(creds, s3_cmd)
+                    elif "redis28" in label:
+                        print("found bound s3 bucket and redis database. will try to export to s3 bucket")
+                        backup_redis(creds, s3_cmd)
                     return
                 else:
                     print("Unable to decide how to backup plan: " + plan + ". Exiting.")
