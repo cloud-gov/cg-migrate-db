@@ -15,7 +15,7 @@ def build_mysql_cred_str(creds):
     return '-u {} -p{} -h {} {}'.format(creds['username'], creds['password'], creds['host'], creds['db_name'])
 
 def build_redis_cred_str(creds):
-    return '-p {} -h {} -a {}'.format(creds['port'], creds['hostname'], creds['password'])
+    return '--port {} --host {} --auth "{}"'.format(creds['port'], creds['hostname'], creds['password'])
 
 
 def build_s3_copy_command(access, secret, region, bucket):

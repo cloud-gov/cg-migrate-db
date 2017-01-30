@@ -18,11 +18,11 @@ def backup_psql(creds, store_stream_cmd):
     command = '{} | {}'.format(psql_cred, store_stream_cmd)
     run_command(command)
 
-# use redis-cli SAVE to backup the database and stream the result into a given store.
+# use rutil to backup the database and stream the result into a given store.
 def backup_redis(creds, store_stream_cmd):
     redis_cred = build_redis_cred_str(creds)
-    command = 'bin/redis-cli {} BGSAVE'.format(redis_cred)
-    run_command(command, True)
+    command = 'bin/rutil {} dump -o | {}'.format(redis_cred, store_stream_cmd)
+    run_command(command)
 
 # for export, we need to know the bound s3 bucket. for now, just get the first bucket.
 def find_s3_bucket_creds(vcap):

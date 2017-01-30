@@ -259,7 +259,7 @@ func (p *ExportPlugin) exportData(cliConnection plugin.CliConnection) error {
 }
 
 func getDefaultSources() []string {
-	return []string{"mysql", "psql"}
+	return []string{"mysql", "psql", "redis"}
 }
 
 func (p *ExportPlugin) importData(cliConnection plugin.CliConnection) error {
@@ -276,6 +276,9 @@ func (p *ExportPlugin) importData(cliConnection plugin.CliConnection) error {
 
 	types := p.findSupportedServiceFromPlan(entry.SourceServicePlan, getDefaultSources()...)
 	targets := p.findSupportedServices(services, types...)
+	types = p.findSupportedServiceFromType(entry.SourceServiceType, getDefaultSources()...)
+	targetsByType := p.findSupportedServices(services, types...)
+	targets = append(targets, targetsByType...)
 	if len(targets) < 1 {
 		return fmt.Errorf("No supported destination services\n")
 	}
@@ -311,14 +314,22 @@ func (p *ExportPlugin) promptImportSelection(prompt string) (ConfigEntry, error)
 	return p.config.Entries[i], nil
 }
 
-func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
+func (p * ExportPlugin) filterServiceByInput(input string, serviceInstanceTypes ...string) []string {
 	var supportedServices []string
 	for _, serviceInstanceType := range serviceInstanceTypes {
-		if strings.Contains(plan, serviceInstanceType) {
+		if strings.Contains(input, serviceInstanceType) {
 			supportedServices = append(supportedServices, serviceInstanceType)
 		}
 	}
 	return supportedServices
+}
+
+func (p * ExportPlugin) findSupportedServiceFromPlan(plan string, serviceInstanceTypes ...string) []string {
+	return p.filterServiceByInput(plan, serviceInstanceTypes...)
+}
+
+func (p * ExportPlugin) findSupportedServiceFromType(typeFilter string, serviceInstanceTypes ...string) []string {
+	return p.filterServiceByInput(typeFilter, serviceInstanceTypes...)
 }
 
 
@@ -327,6 +338,8 @@ func (p *ExportPlugin) findSupportedServices(services []plugin_models.GetService
 	for _, service := range services {
 		for _, serviceInstanceType := range serviceInstanceTypes {
 			if strings.Contains(service.ServicePlan.Name, serviceInstanceType) {
+				supportedServices = append(supportedServices, service)
+			} else if strings.Contains(service.Service.Name, serviceInstanceType) {
 				supportedServices = append(supportedServices, service)
 			}
 		}
@@ -430,7 +443,7 @@ func (p *ExportPlugin) pushImportApp(cliConnection plugin.CliConnection, target 
 		return err
 	}
 	// get the files specific to the import app
-	files := []string{scriptFile, "manifest_import.yml", filepath.Join("bin", "mysql"), filepath.Join("bin", "pg_restore"), filepath.Join("bin", "redis-cli")}
+	files := []string{scriptFile, "manifest_import.yml", filepath.Join("bin", "mysql"), filepath.Join("bin", "pg_restore"), filepath.Join("bin", "rutil")}
 	for _, file := range files {
 		// Retrieve the file.
 		asset, err := Asset(filepath.Join("resources", file))
@@ -489,7 +502,7 @@ func (p *ExportPlugin) pushExportApp(cliConnection plugin.CliConnection, source,
 		return err
 	}
 	// get the files specific to the import app
-	files := []string{scriptFile, "manifest_export.yml", filepath.Join("bin", "mysqldump"), filepath.Join("bin", "pg_dump"), filepath.Join("bin", "redis-cli")}
+	files := []string{scriptFile, "manifest_export.yml", filepath.Join("bin", "mysqldump"), filepath.Join("bin", "pg_dump"), filepath.Join("bin", "rutil")}
 	for _, file := range files {
 		// Retrieve the file.
 		asset, err := Asset(filepath.Join("resources", file))
