@@ -21,9 +21,9 @@ def restore_mysql(creds, store_stream_cmd):
 
 # use pg_restore to restore the database and stream into the database.
 def restore_psql(creds, store_stream_cmd):
-    psql_cred = build_psql_env(creds, 'bin/pg_restore --format=custom -c')
+    psql_cred = build_psql_env(creds, 'bin/pg_restore --format=custom -n public -c -O -x --no-data-for-failed-tables')
     command = '{} | {}'.format(store_stream_cmd, psql_cred)
-    run_command(command)
+    run_command(command, True)
 
 # use rutil to restore a redis instance.
 def restore_redis(creds, store_stream_cmd):
