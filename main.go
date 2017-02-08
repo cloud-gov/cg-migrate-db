@@ -385,7 +385,7 @@ func (p *ExportPlugin) findDuplicateServices(source, store plugin_models.GetServ
 	space, _ := cliConnection.GetCurrentSpace()
 	for _, entry := range p.config.Entries {
 		if api == entry.API && store.Guid == entry.StoreServiceGUID && source.Guid == entry.SourceServiceGUID && entry.SpaceGUID == space.Guid && entry.OrgGUID == org.Guid {
-			return fmt.Errorf("There already exist a backup for service \"%s\" stored in serivce \"%s\" in org \"%s\" and space \"%s\" on API \"%s\". App \"%s\" moderated the migration. If this is old, please run \"cf clean-export-config\" command.", entry.SourceServiceName, entry.StoreServiceName, entry.Org, entry.Space, api, entry.AppName)
+			return fmt.Errorf("There already exists a backup for service \"%s\" stored in service \"%s\" in org \"%s\" and space \"%s\" on API \"%s\". App \"%s\" moderated the migration. If this is old, please run \"cf clean-export-config\" command.", entry.SourceServiceName, entry.StoreServiceName, entry.Org, entry.Space, api, entry.AppName)
 		}
 	}
 	return nil
