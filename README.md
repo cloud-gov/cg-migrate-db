@@ -3,11 +3,11 @@
 `cg-migrate-db` is a Cloud Foundry CLI Plugin for migrating the data of services.
 
 ## Installation
-- Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/windows-32-cg-migrate-db.exe`
-- Windows 64Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/windows-64-cg-migrate-db.exe`
-- Mac OS X: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/mac-cg-migrate-db`
-- Linux 32Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/linux-32-cg-migrate-db`
-- Linux 64Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.3/linux-64-cg-migrate-db`
+- Windows 32Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.4/windows-32-cg-migrate-db.exe`
+- Windows 64Bit: `cf.exe install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.4/windows-64-cg-migrate-db.exe`
+- Mac OS X: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.4/mac-cg-migrate-db`
+- Linux 32Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.4/linux-32-cg-migrate-db`
+- Linux 64Bit: `cf install-plugin https://github.com/18F/cg-migrate-db/releases/download/v0.0.4/linux-64-cg-migrate-db`
 
 ## Pre-Reqs
 ### Supported Services
