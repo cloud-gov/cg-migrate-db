@@ -1,3 +1,4 @@
 cg-migrate-db
 releases/
-vendor/
+vendor/.idea/
+.idea/
