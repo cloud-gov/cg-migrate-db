@@ -1,8 +1,0 @@
-package: github.com/18F/cg-migrate-db
-import:
-- package: code.cloudfoundry.org/cli
-  subpackages:
-  - plugin
-- package: github.com/dchest/uniuri
-- package: github.com/aws/aws-sdk-go
-  version: v1.5.1
